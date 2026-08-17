@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Mohammed Roshan Wali — Backend & AI/ML Engineer</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <style>
+    :root {
+      --spidey-red: #E62429;
+      --spidey-red-dark: #B8181C;
+      --navy: #1B1F3B;
+      --navy-deep: #0F1226;
+      --cyan: #00F0FF;
+      --white: #FFFFFF;
+      --ink: #0A0C10;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      margin: 0;
+      background: var(--ink);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      cursor: default;
+      position: relative;
+    }
+
+    /* ===== SPIDER-MAN BACKGROUND (local image) ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: url('Spiderman.jpeg') center/cover no-repeat;
+      opacity: 0.45;
+      filter: brightness(0.6) saturate(0.8) contrast(1.1);
+      pointer-events: none;
+      /* subtle parallax effect via transform */
+      transform: scale(1.02);
+      transition: transform 0.1s ease-out;
+    }
+
+    /* extra dark overlay to keep text readable */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: rgba(10, 12, 16, 0.65);
+      pointer-events: none;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.7);
+    }
+
+    /* all content sits above the background */
+    .content-layer {
+      position: relative;
+      z-index: 5;
+    }
+
+    /* keep halftone & 3d canvas but with lower opacity so image shows */
+    .halftone {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.08;
+      background-image: radial-gradient(circle, #fff 1px, transparent 1px);
+      background-size: 6px 6px;
+      mix-blend-mode: overlay;
+    }
+
+    #webgl-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      opacity: 0.5;
+      /* reduce three.js opacity to blend with bg image */
+      pointer-events: none;
+    }
+
+    /* rest of styles (comic cards, navbar, etc.) unchanged */
+    ::selection {
+      background: var(--spidey-red);
+      color: var(--white);
+    }
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--ink);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--spidey-red);
+      border-radius: 10px;
+      border: 2px solid var(--ink);
+    }
+
+    h1,
+    h2,
+    h3,
+    .action-font {
+      font-family: 'Bangers', cursive;
+      letter-spacing: .03em;
+    }
+    .marker-font {
+      font-family: 'Permanent Marker', cursive;
+    }
+
+    .comic-outline {
+      -webkit-text-stroke: 2px var(--navy-deep);
+      paint-order: stroke fill;
+    }
+
+    #navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      background: rgba(10, 12, 16, .6);
+      border-bottom: 1px solid rgba(0, 240, 255, .15);
+      transition: transform .4s ease;
+    }
+    .nav-link {
+      position: relative;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      font-size: .78rem;
+      color: #cfd3e6;
+      transition: color .25s ease;
+      cursor: pointer;
+    }
+    .nav-link:hover {
+      color: var(--cyan);
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -4px;
+      width: 0%;
+      height: 2px;
+      background: var(--spidey-red);
+      transition: width .25s ease;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .btn-resume {
+      background: var(--spidey-red);
+      box-shadow: 0 0 0 2px var(--navy-deep), 0 0 18px rgba(230, 36, 41, .6);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .btn-resume:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 0 0 2px var(--navy-deep), 0 0 26px rgba(0, 240, 255, .7);
+    }
+
+    .comic-card {
+      position: relative;
+      background: linear-gradient(160deg, rgba(27, 31, 59, .6), rgba(10, 12, 16, .8));
+      border: 1px solid rgba(0, 240, 255, .18);
+      backdrop-filter: blur(14px);
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .45);
+      transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+    }
+    .comic-card:hover {
+      border-color: rgba(230, 36, 41, .55);
+      box-shadow: 0 14px 40px rgba(230, 36, 41, .25), 0 0 40px rgba(0, 240, 255, .08);
+    }
+
+    .spidey-sense {
+      position: relative;
+    }
+    .spidey-sense::before {
+      content: '';
+      position: absolute;
+      inset: -14px;
+      border-radius: inherit;
+      border: 2px solid var(--cyan);
+      opacity: 0;
+      transform: scale(.9);
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .spidey-sense:hover::before {
+      opacity: .55;
+      animation: sense-pulse 1.2s ease-out infinite;
+    }
+    @keyframes sense-pulse {
+      0% {
+        transform: scale(.94);
+        opacity: .6;
+      }
+      100% {
+        transform: scale(1.12);
+        opacity: 0;
+      }
+    }
+
+    .section-eyebrow {
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: .35em;
+      color: var(--cyan);
+      font-size: .85rem;
+    }
+
+    .stat-badge {
+      background: rgba(27, 31, 59, .6);
+      border: 1px solid rgba(0, 240, 255, .35);
+      backdrop-filter: blur(8px);
+    }
+
+    .power-bar {
+      height: 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(0, 240, 255, .25);
+    }
+    .power-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--spidey-red), var(--cyan));
+      width: 0%;
+      transition: width 1.4s cubic-bezier(.16, 1, .3, 1);
+    }
+
+    .project-card {
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+    }
+    .project-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: var(--cyan);
+      box-shadow: 0 20px 60px rgba(0, 240, 255, 0.15), 0 0 40px rgba(230, 36, 41, 0.1);
+    }
+
+    .burst {
+      clip-path: polygon(50% 0%, 61% 20%, 82% 10%, 78% 32%, 100% 40%, 82% 55%, 92% 76%, 70% 72%, 65% 95%, 50% 78%, 35% 95%, 30% 72%, 8% 76%, 18% 55%, 0% 40%, 22% 32%, 18% 10%, 39% 20%);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(6, 7, 12, .8);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-box {
+      transform: scale(.85) translateY(30px);
+      transition: transform .35s cubic-bezier(.2, .9, .25, 1);
+    }
+    .modal-backdrop.open .modal-box {
+      transform: scale(1) translateY(0);
+    }
+
+    .thwip-line {
+      position: fixed;
+      z-index: 99;
+      pointer-events: none;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--white), var(--cyan), transparent);
+      box-shadow: 0 0 8px var(--cyan);
+      transform-origin: left center;
+    }
+
+    .divider-web {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, .5), transparent);
+    }
+
+    input,
+    textarea {
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(0, 240, 255, .25);
+      color: #fff;
+    }
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0, 240, 255, .15);
+    }
+
+    .section-pad {
+      padding-top: 7rem;
+      padding-bottom: 7rem;
+    }
+    @media (max-width:768px) {
+      .section-pad {
+        padding-top: 4.5rem;
+        padding-bottom: 4.5rem;
+      }
+    }
+
+    /* intro overlay stays above everything */
+    #introOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0A0C10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    #introOverlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .intro-video-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      overflow: hidden;
+    }
+    .intro-video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .intro-video-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(10, 12, 16, 0.3) 0%, rgba(10, 12, 16, 0.7) 100%);
+      z-index: 2;
+    }
+    .intro-overlay-content {
+      position: relative;
+      z-index: 3;
+      text-align: center;
+      padding: 2rem;
+    }
+    .intro-title {
+      font-family: 'Bangers', cursive;
+      font-size: 4rem;
+      color: #fff;
+      text-shadow: 0 0 40px rgba(230, 36, 41, 0.6), 0 0 80px rgba(0, 240, 255, 0.3);
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 1.2s ease forwards 0.5s;
+    }
+    .intro-subtitle {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 1.8rem;
+      color: #00F0FF;
+      letter-spacing: 0.15em;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 1s ease forwards 1.2s;
+    }
+    .intro-button {
+      margin-top: 2.5rem;
+      padding: 0.9rem 3rem;
+      font-family: 'Bangers', cursive;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      background: #E62429;
+      color: #fff;
+      border: none;
+      border-radius: 60px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(230, 36, 41, 0.5);
+      opacity: 0;
+      transform: scale(0.9);
+      animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 2s;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .intro-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 50px rgba(230, 36, 41, 0.7), 0 0 100px rgba(0, 240, 255, 0.2);
+    }
+    .intro-button i {
+      margin-right: 10px;
+    }
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes popIn {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .skip-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 4;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0.6;
+      font-family: 'Inter', sans-serif;
+    }
+    .skip-btn:hover {
+      opacity: 1;
+      background: rgba(230, 36, 41, 0.3);
+      border-color: #E62429;
+    }
+    .video-control-btn {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      transition: all 0.3s ease;
+      opacity: 0.6;
+    }
+    .video-control-btn:hover {
+      opacity: 1;
+      background: rgba(230, 36, 41, 0.3);
+      border-color: #E62429;
+    }
+    @media (max-width: 768px) {
+      .intro-title {
+        font-size: 2.5rem;
+      }
+      .intro-subtitle {
+        font-size: 1.2rem;
+      }
+      .intro-button {
+        font-size: 1.1rem;
+        padding: 0.7rem 2rem;
+      }
+      .skip-btn {
+        top: 12px;
+        right: 12px;
+        padding: 6px 14px;
+        font-size: 0.7rem;
+      }
+      .video-control-btn {
+        bottom: 80px;
+        padding: 6px 14px;
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== INTRO OVERLAY (unchanged) ===== -->
+  <div id="introOverlay">
+    <div class="intro-video-container">
+      <video id="introVideo" autoplay muted playsinline loop>
+        <source src="85f3466d22940adc8c9bafd954fc03a3_720w.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+    <div class="intro-video-overlay"></div>
+    <button class="skip-btn" id="skipIntroBtn"><i class="fa-regular fa-circle-play"></i> Skip</button>
+    <button class="video-control-btn" id="videoControlBtn"><i class="fa-solid fa-pause"></i> Pause</button>
+    <div class="intro-overlay-content">
+      <h1 class="intro-title">WELCOME TO MY PORTFOLIO</h1>
+      <p class="intro-subtitle">SOFTWARE DEVELOPER</p>
+      <button class="intro-button" id="enterPortfolioBtn"><i class="fa-solid fa-spider"></i> ENTER!!</button>
+    </div>
+  </div>
+
+  <!-- decorative layers -->
+  <div class="halftone"></div>
+  <canvas id="webgl-bg"></canvas>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav id="navbar" class="content-layer">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="#hero" class="action-font text-2xl comic-outline" style="color:var(--white);">M<span style="color:var(--spidey-red);">R</span>W</a>
+      <div class="hidden md:flex items-center gap-8">
+        <a class="nav-link" data-target="about">About</a>
+        <a class="nav-link" data-target="stack">Skills</a>
+        <a class="nav-link" data-target="projects">Projects</a>
+        <a class="nav-link" data-target="awards">Achievements</a>
+        <a class="nav-link" data-target="contact">Contact</a>
+      </div>
+      <button id="resumeBtn" class="btn-resume text-white px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+        <i class="fa-solid fa-file-pdf"></i> Resume
+      </button>
+    </div>
+  </nav>
+
+  <main class="content-layer">
+
+   <!-- HERO -->
+<section id="hero" class="min-h-screen flex flex-col items-center justify-center text-center px-6 relative bg-cover bg-center bg-no-repeat" style="background-image: linear-gradient(rgba(10, 12, 16, 0.75), rgba(10, 12, 16, 0.85)), url('Spiderman.jpg');">
+  <p class="section-eyebrow mb-4">Software Developer &amp; Java Developer</p>
+  <h1 class="comic-outline text-6xl md:text-8xl leading-none mb-4" style="color:var(--white);">
+    MOHAMMED <span style="color:var(--spidey-red);">ROSHAN</span> WALI
+  </h1>
+  
+  <div class="flex flex-col sm:flex-row gap-4 mb-10">
+    <a href="#projects" class="spidey-sense action-font tracking-wide text-xl px-8 py-3 rounded-full" style="background:var(--spidey-red); color:#fff;">VIEW PROJECTS</a>
+    <button id="heroResumeBtn" class="spidey-sense action-font tracking-wide text-xl px-8 py-3 rounded-full border-2" style="border-color:var(--cyan); color:var(--cyan);">DOWNLOAD RESUME</button>
+  </div>
+  <div class="flex flex-wrap justify-center gap-4">
+    <div class="stat-badge px-5 py-2 rounded-full text-sm font-semibold">600+ DSA Problems Solved</div>
+    <div class="stat-badge px-5 py-2 rounded-full text-sm font-semibold">🏆 1st Place National Hackathon</div>
+    <div class="stat-badge px-5 py-2 rounded-full text-sm font-semibold">8.45 CGPA</div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-xs tracking-widest" style="color:var(--cyan);">
+    <i class="fa-solid fa-chevron-down"></i> SCROLL THE WEB
+  </div>
+</section>
+
+    <!-- ABOUT -->
+    <section id="about" class="section-pad px-6 relative">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="comic-outline text-5xl md:text-6xl mb-10" style="color:var(--white);">ABOUT ME</h2>
+        <div class="grid md:grid-cols-2 gap-8 items-stretch">
+          <div class="comic-card p-8">
+            <p class="text-gray-200 leading-relaxed mb-4">Computer Science (AI/ML) undergraduate at CMR College of Engineering and Technology. Maintaining an <span style="color:var(--cyan);font-weight:700;">8.45 CGPA</span>.</p>
+            <p class="text-gray-200 leading-relaxed mb-4">Building resilient backend systems with <span style="color:var(--spidey-red);font-weight:700;">Java &amp; Spring Boot</span>. Chasing national hackathons, wiring AI/ML models and full-stack applications under pressure.</p>
+            <p class="text-gray-200 leading-relaxed">600+ solved DSA problems. 1st, 2nd, and 3rd place across multiple competitions.</p>
+          </div>
+          <button id="resumePanelBtn" class="comic-card spidey-sense p-8 flex flex-col items-center justify-center text-center gap-4 group">
+            <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:rgba(230,36,41,.15); border:2px solid var(--spidey-red);">
+              <i class="fa-solid fa-file-shield text-2xl" style="color:var(--spidey-red);"></i>
+            </div>
+            <h3 class="action-font text-3xl">VIEW RESUME</h3>
+            <p class="text-gray-400 text-sm">Preview and download my professional resume.</p>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider-web max-w-4xl mx-auto"></div>
+
+    <!-- TECH STACK -->
+    <section id="stack" class="section-pad px-6">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="comic-outline text-5xl md:text-6xl mb-10" style="color:var(--white);">TECHNICAL SKILLS</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6" id="stack-grid"></div>
+      </div>
+    </section>
+
+    <div class="divider-web max-w-4xl mx-auto"></div>
+
+    <!-- PROJECTS -->
+    <section id="projects" class="section-pad px-6">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="comic-outline text-5xl md:text-6xl mb-10" style="color:var(--white);">PROJECTS</h2>
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- Project 1 -->
+          <div class="comic-card project-card p-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-[#E62429] opacity-5 rounded-full blur-2xl"></div>
+            <span class="burst inline-flex items-center justify-center text-xs font-black px-5 py-5 mb-4" style="background:var(--spidey-red); color:#fff;">WINNER</span>
+            <h3 class="action-font text-3xl mb-2">NEUROGUARDIAN</h3>
+            <p class="text-cyan-300 text-sm mb-4">Multi-Modal Emergency AI Sentinel</p>
+            <p class="text-gray-300 text-sm leading-relaxed mb-4">AI-powered healthcare emergency monitoring system processing ECG patterns, medical images, and vital data. Built during a national hackathon.</p>
+            <div class="flex flex-wrap gap-2 mt-auto">
+              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25);">Python</span>
+              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25);">TensorFlow</span>
+              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25);">FastAPI</span>
+            </div>
+            <p class="marker-font text-sm mt-4" style="color:var(--spidey-red);">🏆 1st Prize · 50+ Teams · ₹20,000</p>
+          </div>
+          <!-- Project 2 -->
+          <div class="comic-card project-card p-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-[#00F0FF] opacity-5 rounded-full blur-2xl"></div>
+            <span class="burst inline-flex items-center justify-center text-xs font-black px-5 py-5 mb-4" style="background:var(--navy); color:var(--cyan); border:1px solid var(--cyan);">FULL-STACK</span>
+            <h3 class="action-font text-3xl mb-2">STUDENT MANAGEMENT</h3>
+            <p class="text-cyan-300 text-sm mb-4">Full-Stack CRUD Application</p>
+            <p class="text-gray-300 text-sm leading-relaxed mb-4">Complete CRUD system with Controller-Service-Repository architecture, RESTful APIs, and centralized exception handling.</p>
+            <div class="flex flex-wrap gap-2 mt-auto">
+              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25);">Java</span>
+              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25);">Spring Boot</span>
+              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25);">Hibernate</span>
+              <span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25);">MySQL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider-web max-w-4xl mx-auto"></div>
+
+    <!-- AWARDS -->
+    <section id="awards" class="section-pad px-6">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="comic-outline text-5xl md:text-6xl mb-10" style="color:var(--white);">ACHIEVEMENTS</h2>
+        <div class="grid md:grid-cols-3 gap-6 mb-14">
+          <div class="comic-card spidey-sense p-6 text-center">
+            <div class="text-4xl mb-2">🏆</div>
+            <h3 class="action-font text-2xl" style="color:var(--spidey-red);">1st Prize</h3>
+            <p class="text-gray-300 text-sm mt-1">GNIT National Hackathon</p>
+            <p class="text-gray-500 text-xs mt-1">1st / 50+ teams · ₹20,000</p>
+          </div>
+          <div class="comic-card spidey-sense p-6 text-center">
+            <div class="text-4xl mb-2">🏆</div>
+            <h3 class="action-font text-2xl" style="color:var(--cyan);">2nd Prize</h3>
+            <p class="text-gray-300 text-sm mt-1">GDG x GLEC Hackathon</p>
+            <p class="text-gray-500 text-xs mt-1">2nd / 522 teams · ₹15,000</p>
+          </div>
+          <div class="comic-card spidey-sense p-6 text-center">
+            <div class="text-4xl mb-2">🏆</div>
+            <h3 class="action-font text-2xl" style="color:#FFD166;">3rd Prize</h3>
+            <p class="text-gray-300 text-sm mt-1">Virtual Vista 3.0 National</p>
+            <p class="text-gray-500 text-xs mt-1">3rd / 200+ teams · ₹5,000</p>
+          </div>
+        </div>
+
+        <h3 class="action-font text-3xl mb-6" style="color:var(--white);">CERTIFICATIONS</h3>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <a href="https://catalog-education.oracle.com/ords/certview/sharebadge?id=F8FD7D0BAFEB01C3B3178647522552F2DF3CB268DB0A2DFF5D4E5C60F8EB7008" target="_blank" class="comic-card p-5 flex items-center gap-4 hover:border-cyan-400 transition-colors">
+            <i class="fa-solid fa-certificate text-xl" style="color:var(--cyan);"></i>
+            <span class="text-gray-200 text-sm">Oracle Agentic AI Foundations Associate</span>
+          </a>
+          <a href="https://www.theforage.com/completion-certificates/Sj7temL583QAYpHXD/E6McHJDKsQYh79moz_Sj7temL583QAYpHXD_693426d77dfff3887669d5d8_1767725300900_completion_certificate.pdf" target="_blank" class="comic-card p-5 flex items-center gap-4 hover:border-cyan-400 transition-colors">
+            <i class="fa-solid fa-certificate text-xl" style="color:var(--cyan);"></i>
+            <span class="text-gray-200 text-sm">JPMorgan Chase - Software Engineering</span>
+          </a>
+          <div class="comic-card p-5 flex items-center gap-4">
+            <i class="fa-solid fa-certificate text-xl" style="color:var(--cyan);"></i>
+            <span class="text-gray-200 text-sm">Deloitte Australia - Technology Simulation</span>
+          </div>
+          <a href="https://infyspringboard.onwingspan.com/public-assets/infosysheadstart/cert/lex_auth_012880464547618816347_shared/8e178f9f-ad87-4a04-bf51-4e44653f10d5.pdf" target="_blank" class="comic-card p-5 flex items-center gap-4 hover:border-cyan-400 transition-colors">
+            <i class="fa-solid fa-certificate text-xl" style="color:var(--cyan);"></i>
+            <span class="text-gray-200 text-sm">Infosys SpringBoard - Java Programming</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider-web max-w-4xl mx-auto"></div>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section-pad px-6 pb-32">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="comic-outline text-5xl md:text-6xl mb-3" style="color:var(--white);">CONTACT</h2>
+        <div class="grid md:grid-cols-2 gap-10">
+          <form class="comic-card p-8 flex flex-col gap-4" onsubmit="return false;">
+            <div>
+              <label class="text-xs uppercase tracking-widest text-gray-400">Your Name</label>
+              <input type="text" class="w-full mt-1 px-4 py-3 rounded-lg" placeholder="Peter Parker">
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-gray-400">Your Email</label>
+              <input type="email" class="w-full mt-1 px-4 py-3 rounded-lg" placeholder="you@gmail.com">
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-gray-400">Message</label>
+              <textarea rows="4" class="w-full mt-1 px-4 py-3 rounded-lg" placeholder="Got a mission for me?"></textarea>
+            </div>
+            <button class="action-font text-xl mt-2 px-6 py-3 rounded-full" style="background:var(--spidey-red); color:#fff;">SEND THE SIGNAL</button>
+          </form>
+          <div class="flex flex-col gap-4">
+            <a href="mailto:roshanmaahi786@gmail.com" class="comic-card spidey-sense p-5 flex items-center gap-4">
+              <i class="fa-solid fa-envelope text-xl" style="color:var(--cyan);"></i>
+              <span class="text-gray-200 text-sm">roshanmaahi786@gmail.com</span>
+            </a>
+            <a href="tel:+918463969976" class="comic-card spidey-sense p-5 flex items-center gap-4">
+              <i class="fa-solid fa-phone text-xl" style="color:var(--cyan);"></i>
+              <span class="text-gray-200 text-sm">+91-8463969976</span>
+            </a>
+            <a href="https://github.com/roshan2006-dev" target="_blank" class="comic-card spidey-sense p-5 flex items-center gap-4 hover:border-cyan-400 transition-colors">
+              <i class="fa-brands fa-github text-xl" style="color:var(--cyan);"></i>
+              <span class="text-gray-200 text-sm">GitHub Profile</span>
+            </a>
+            <a href="#" class="comic-card spidey-sense p-5 flex items-center gap-4">
+              <i class="fa-brands fa-linkedin text-xl" style="color:var(--cyan);"></i>
+              <span class="text-gray-200 text-sm">LinkedIn Profile</span>
+            </a>
+            <a href="https://leetcode.com/u/Roshan__2006/" target="_blank" class="comic-card spidey-sense p-5 flex items-center gap-4 hover:border-cyan-400 transition-colors">
+              <i class="fa-solid fa-code text-xl" style="color:var(--cyan);"></i>
+              <span class="text-gray-200 text-sm">LeetCode — 600+ Solved</span>
+            </a>
+          </div>
+        </div>
+        <p class="text-center text-gray-600 text-xs mt-16">© 2026 Mohammed Roshan Wali · Software Developer</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- RESUME MODAL -->
+  <div id="resumeModal" class="modal-backdrop">
+    <div class="modal-box comic-card w-[92%] max-w-xl p-8 relative">
+      <button id="closeModal" class="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center" style="background:rgba(230,36,41,.2); border:1px solid var(--spidey-red);">
+        <i class="fa-solid fa-xmark" style="color:var(--spidey-red);"></i>
+      </button>
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-3" style="background:rgba(0,240,255,.12); border:2px solid var(--cyan);">
+          <i class="fa-solid fa-spider text-2xl" style="color:var(--cyan);"></i>
+        </div>
+        <h3 class="action-font text-4xl comic-outline">PROFESSIONAL RESUME</h3>
+      </div>
+      <div class="space-y-3 text-sm text-gray-200 mb-6">
+        <div class="flex justify-between border-b border-white/10 pb-2"><span class="text-gray-400">Name</span><span>Mohammed Roshan Wali</span></div>
+        <div class="flex justify-between border-b border-white/10 pb-2"><span class="text-gray-400">Role</span><span>Backend / Full-Stack Engineer</span></div>
+        <div class="flex justify-between border-b border-white/10 pb-2"><span class="text-gray-400">Email</span><span>roshanmaahi786@gmail.com</span></div>
+        <div class="flex justify-between border-b border-white/10 pb-2"><span class="text-gray-400">Phone</span><span>+91-8463969976</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">CGPA</span><span>8.45 / 10.00</span></div>
+      </div>
+      <button id="downloadResumeBtn" class="action-font text-xl w-full py-3 rounded-full" style="background:var(--spidey-red); color:#fff;">
+        <i class="fa-solid fa-download"></i> DOWNLOAD RESUME
+      </button>
+    </div>
+  </div>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    /* ===== INTRO CONTROLS ===== */
+    const introOverlay = document.getElementById('introOverlay');
+    const enterBtn = document.getElementById('enterPortfolioBtn');
+    const skipBtn = document.getElementById('skipIntroBtn');
+    const introVideo = document.getElementById('introVideo');
+    const videoControlBtn = document.getElementById('videoControlBtn');
+    let introComplete = false;
+
+    function dismissIntro() {
+      if (introComplete) return;
+      introComplete = true;
+      introOverlay.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+      if (introVideo) introVideo.pause();
+      setTimeout(() => {
+        playIntro();
+        initScrollReveals();
+        initTechStack();
+      }, 300);
+    }
+
+    enterBtn.addEventListener('click', dismissIntro);
+    skipBtn.addEventListener('click', dismissIntro);
+    introOverlay.addEventListener('click', (e) => {
+      if (e.target === introOverlay || e.target.closest('.intro-overlay-content') === null) {
+        if (!e.target.closest('.intro-overlay-content') && !e.target.closest('.skip-btn') && !e.target.closest(
+            '.video-control-btn')) {
+          dismissIntro();
+        }
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+        if (!introComplete) dismissIntro();
+      }
+    });
+
+    if (videoControlBtn && introVideo) {
+      videoControlBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (introVideo.paused) {
+          introVideo.play();
+          videoControlBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+        } else {
+          introVideo.pause();
+          videoControlBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+        }
+      });
+    }
+
+    function playIntro() {
+      gsap.from('#hero h1', { y: 40, opacity: 0, duration: 1, ease: 'power3.out', delay: 0.2 });
+      gsap.from('#hero .section-eyebrow', { y: 20, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.4 });
+      gsap.from('#hero .marker-font', { y: 20, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.6 });
+      gsap.from('#hero .flex-wrap', { y: 20, opacity: 0, duration: 0.8, ease: 'power3.out', delay: 0.8 });
+    }
+
+    function initScrollReveals() {
+      gsap.utils.toArray('.comic-card').forEach((card, i) => {
+        gsap.from(card, {
+          y: 40,
+          opacity: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: card, start: 'top 90%' },
+          delay: (i % 3) * 0.05
+        });
+      });
+      gsap.utils.toArray('h2.comic-outline').forEach((h) => {
+        gsap.from(h, {
+          x: -60,
+          opacity: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: h, start: 'top 88%' }
+        });
+      });
+    }
+
+    function initTechStack() {
+      const stack = [
+        { title: "Languages", icon: "fa-code", level: 90, items: ["Java", "Python", "C", "JavaScript", "SQL"] },
+        { title: "Backend", icon: "fa-server", level: 92, items: ["Spring Boot", "Spring Core", "Spring Data JPA",
+            "Spring Security", "Hibernate", "RESTful APIs", "JWT"
+          ] },
+        { title: "Frontend & Tools", icon: "fa-layer-group", level: 75, items: ["HTML5", "CSS3", "JavaScript",
+            "MySQL", "Git", "GitHub", "Postman", "Maven"
+          ] },
+        { title: "Core CS", icon: "fa-brain", level: 88, items: ["DSA", "OOP", "DBMS", "Operating Systems"] },
+      ];
+      const stackGrid = document.getElementById('stack-grid');
+      stack.forEach((cat) => {
+        const card = document.createElement('div');
+        card.className = "comic-card spidey-sense p-6";
+        card.innerHTML = `
+            <div class="flex items-center gap-3 mb-4">
+              <i class="fa-solid ${cat.icon} text-xl" style="color:var(--spidey-red);"></i>
+              <h3 class="action-font text-2xl tracking-wide">${cat.title}</h3>
+            </div>
+            <div class="power-bar mb-4"><div class="power-bar-fill" data-level="${cat.level}"></div></div>
+            <div class="flex flex-wrap gap-2">
+              ${cat.items.map(it => `<span class="text-xs px-3 py-1 rounded-full" style="background:rgba(0,240,255,.08); border:1px solid rgba(0,240,255,.25); color:#cfe;">${it}</span>`).join('')}
+            </div>
+          `;
+        stackGrid.appendChild(card);
+        ScrollTrigger.create({
+          trigger: card,
+          start: 'top 85%',
+          onEnter: () => {
+            const fill = card.querySelector('.power-bar-fill');
+            fill.style.width = fill.dataset.level + '%';
+          },
+          once: true
+        });
+      });
+    }
+
+    /* ===== NAV & MODAL ===== */
+    let lastY = window.scrollY;
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > lastY && window.scrollY > 140) nav.style.transform = 'translateY(-100%)';
+      else nav.style.transform = 'translateY(0)';
+      lastY = window.scrollY;
+    });
+
+    const modal = document.getElementById('resumeModal');
+
+    function openModal() { modal.classList.add('open');
+      thwip(); }
+
+    function closeModal() { modal.classList.remove('open'); }
+    document.getElementById('resumeBtn').addEventListener('click', openModal);
+    document.getElementById('heroResumeBtn').addEventListener('click', openModal);
+    document.getElementById('resumePanelBtn').addEventListener('click', openModal);
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    const RESUME_URL = "https://drive.google.com/file/d/1Yb3vnOGGgGNen2s5qSinigQmlFnTLZ7e/view?usp=drive_link";
+    document.getElementById('downloadResumeBtn').addEventListener('click', () => {
+      if (RESUME_URL) {
+        window.open(RESUME_URL, '_blank');
+      } else {
+        alert('Resume link not available.');
+      }
+    });
+
+    function thwip() {
+      const line = document.createElement('div');
+      line.className = 'thwip-line';
+      const w = Math.random() * 300 + 200;
+      line.style.width = w + 'px';
+      line.style.left = (window.innerWidth / 2 - w / 2) + 'px';
+      line.style.top = (window.innerHeight / 2) + 'px';
+      line.style.transform = `rotate(${Math.random()*40-20}deg) scaleX(0)`;
+      document.body.appendChild(line);
+      gsap.to(line, {
+        scaleX: 1,
+        duration: 0.18,
+        ease: 'power2.out',
+        onComplete: () => {
+          gsap.to(line, { opacity: 0, duration: 0.35, delay: 0.05, onComplete: () => line.remove() });
+        }
+      });
+    }
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        thwip();
+        const targetId = link.dataset.target;
+        const target = document.getElementById(targetId);
+        if (target) {
+          window.scrollTo({ top: target.offsetTop - 70, behavior: 'smooth' });
+        }
+        panCameraToward(targetId);
+      });
+    });
+
+    /* ===== THREE.JS BACKGROUND (blended) ===== */
+    const canvas = document.getElementById('webgl-bg');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0a0c10, 0.018);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 2, 18);
+    const baseCamPos = camera.position.clone();
+
+    scene.add(new THREE.AmbientLight(0x334, 1.2));
+    const key = new THREE.DirectionalLight(0x00f0ff, 1.1);
+    key.position.set(6, 10, 6);
+    scene.add(key);
+    const rim = new THREE.PointLight(0xE62429, 2.2, 40);
+    rim.position.set(-8, 4, -4);
+    scene.add(rim);
+
+    const cityGroup = new THREE.Group();
+    const buildingMat = new THREE.MeshStandardMaterial({ color: 0x1b1f3b, roughness: .8, metalness: .1, emissive: 0x0a0c10 });
+    for (let i = 0; i < 40; i++) {
+      const w = THREE.MathUtils.randFloat(0.8, 2.2);
+      const h = THREE.MathUtils.randFloat(2, 10);
+      const d = THREE.MathUtils.randFloat(0.8, 2.2);
+      const geo = new THREE.BoxGeometry(w, h, d);
+      const mesh = new THREE.Mesh(geo, buildingMat);
+      const angle = Math.random() * Math.PI * 2;
+      const radius = THREE.MathUtils.randFloat(16, 34);
+      mesh.position.set(Math.cos(angle) * radius, h / 2 - 6, Math.sin(angle) * radius - 10);
+      mesh.userData.baseY = mesh.position.y;
+      cityGroup.add(mesh);
+      if (Math.random() > 0.5) {
+        const edges = new THREE.EdgesGeometry(geo);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true,
+          opacity: .25 }));
+        line.position.copy(mesh.position);
+        cityGroup.add(line);
+      }
+    }
+    scene.add(cityGroup);
+
+    /* Spidey character (simplified) */
+    const spidermanGroup = new THREE.Group();
+    const torsoGeo = new THREE.CylinderGeometry(1.0, 0.8, 1.8, 8);
+    const torsoMat = new THREE.MeshStandardMaterial({ color: 0xE62429, roughness: 0.6, metalness: 0.2 });
+    const torso = new THREE.Mesh(torsoGeo, torsoMat);
+    torso.position.y = 2.0;
+    torso.scale.set(0.9, 1.0, 0.7);
+    spidermanGroup.add(torso);
+
+    const chestGeo = new THREE.CylinderGeometry(0.7, 0.6, 0.6, 8);
+    const chestMat = new THREE.MeshStandardMaterial({ color: 0x1B1F3B, roughness: 0.7, metalness: 0.1 });
+    const chest = new THREE.Mesh(chestGeo, chestMat);
+    chest.position.set(0, 2.2, 0.5);
+    chest.scale.set(0.9, 0.8, 0.3);
+    spidermanGroup.add(chest);
+
+    const headGeo = new THREE.SphereGeometry(0.55, 8, 8);
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xE62429, roughness: 0.5 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.set(0, 3.0, 0.15);
+    head.scale.set(0.9, 0.85, 0.8);
+    spidermanGroup.add(head);
+
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, emissive: 0x333333, roughness: 0.1, metalness: 0.3 });
+    const eyeShape = new THREE.SphereGeometry(0.18, 6, 6);
+    const eyeL = new THREE.Mesh(eyeShape, eyeMat);
+    eyeL.position.set(-0.28, 3.05, 0.5);
+    eyeL.scale.set(0.5, 0.3, 0.15);
+    spidermanGroup.add(eyeL);
+    const eyeR = new THREE.Mesh(eyeShape, eyeMat);
+    eyeR.position.set(0.28, 3.05, 0.5);
+    eyeR.scale.set(0.5, 0.3, 0.15);
+    spidermanGroup.add(eyeR);
+
+    const armMat = new THREE.MeshStandardMaterial({ color: 0xE62429, roughness: 0.6 });
+    const armGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.9, 6);
+    const armL = new THREE.Mesh(armGeo, armMat);
+    armL.position.set(-0.85, 2.2, 0);
+    armL.rotation.z = 0.4;
+    armL.rotation.x = -0.3;
+    spidermanGroup.add(armL);
+    const armR = new THREE.Mesh(armGeo, armMat);
+    armR.position.set(0.85, 2.2, 0);
+    armR.rotation.z = -0.4;
+    armR.rotation.x = 0.3;
+    spidermanGroup.add(armR);
+
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x1B1F3B, roughness: 0.7 });
+    const legGeo = new THREE.CylinderGeometry(0.2, 0.28, 1.0, 6);
+    const legL = new THREE.Mesh(legGeo, legMat);
+    legL.position.set(-0.35, 0.9, 0);
+    legL.rotation.x = 0.1;
+    spidermanGroup.add(legL);
+    const legR = new THREE.Mesh(legGeo, legMat);
+    legR.position.set(0.35, 0.9, 0);
+    legR.rotation.x = -0.1;
+    spidermanGroup.add(legR);
+
+    spidermanGroup.position.set(-2.5, -1.0, 2.0);
+    spidermanGroup.scale.set(0.7, 0.7, 0.7);
+    scene.add(spidermanGroup);
+
+    // web strands
+    const webPoints = [
+      new THREE.Vector3(-2.5, 2.5, 2.0),
+      new THREE.Vector3(-5.0, 5.0, -1.0),
+      new THREE.Vector3(-3.0, 7.0, -2.0),
+    ];
+    const webCurve = new THREE.CatmullRomCurve3(webPoints);
+    const webTubeGeo = new THREE.TubeGeometry(webCurve, 20, 0.04, 4, false);
+    const webTubeMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.3 });
+    const webTube = new THREE.Mesh(webTubeGeo, webTubeMat);
+    scene.add(webTube);
+
+    // floaters
+    const floaters = [];
+
+    function makeEmblem() {
+      const group = new THREE.Group();
+      const core = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.9, 0),
+        new THREE.MeshStandardMaterial({ color: 0xE62429, emissive: 0x820000, roughness: .3, metalness: .4 })
+      );
+      group.add(core);
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.4, 0.03, 8, 40),
+        new THREE.MeshBasicMaterial({ color: 0x00f0ff })
+      );
+      ring.rotation.x = Math.PI / 2;
+      group.add(ring);
+      return group;
+    }
+
+    function makeWebShooter() {
+      const group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.28, 0.34, 1.1, 12),
+        new THREE.MeshStandardMaterial({ color: 0x1b1f3b, roughness: .5, metalness: .5 })
+      );
+      group.add(body);
+      const tip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.18, 0.4, 12),
+        new THREE.MeshStandardMaterial({ color: 0xE62429, emissive: 0x300000 })
+      );
+      tip.position.y = 0.75;
+      group.add(tip);
+      return group;
+    }
+
+    function makeNewspaper() {
+      const group = new THREE.Group();
+      const roll = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.35, 1.2, 16, 1, true),
+        new THREE.MeshStandardMaterial({ color: 0xf2f0e6, roughness: .9, side: THREE.DoubleSide })
+      );
+      roll.rotation.z = Math.PI / 2;
+      group.add(roll);
+      return group;
+    }
+
+    function addFloater(mesh, x, y, z, speed) {
+      mesh.position.set(x, y, z);
+      scene.add(mesh);
+      floaters.push({ mesh, speed: speed || 1, offset: Math.random() * Math.PI * 2, baseY: y });
+    }
+    addFloater(makeEmblem(), 6, 3, -3, 1);
+    addFloater(makeEmblem(), -6, -1, -5, 0.7);
+    addFloater(makeWebShooter(), 4, -2, 2, 1.3);
+    addFloater(makeWebShooter(), -4, 3.5, -1, 0.9);
+    addFloater(makeNewspaper(), 2, 4.5, -4, 0.6);
+    addFloater(makeNewspaper(), -7, -1, -5, 1.1);
+
+    // particles
+    const particleCount = 260;
+    const particlesGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const basePositions = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      const x = (Math.random() - 0.5) * 40;
+      const y = (Math.random() - 0.5) * 24;
+      const z = (Math.random() - 0.5) * 30 - 5;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+      basePositions[i * 3] = x;
+      basePositions[i * 3 + 1] = y;
+      basePositions[i * 3 + 2] = z;
+    }
+    particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ color: 0x00f0ff, size: 0.05,
+      transparent: true, opacity: .4 }));
+    scene.add(particles);
+
+    const mouse = { x: 0, y: 0 };
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    const anchorTargets = {
+      about: new THREE.Vector3(-4, 1, 6),
+      stack: new THREE.Vector3(4, -1, 4),
+      projects: new THREE.Vector3(-3, 2, 8),
+      awards: new THREE.Vector3(3, 0, 6),
+      contact: new THREE.Vector3(0, -2, 8)
+    };
+
+    function panCameraToward(id) {
+      const target = anchorTargets[id];
+      if (!target) return;
+      gsap.to(camera.position, {
+        x: baseCamPos.x + target.x * 0.35,
+        y: baseCamPos.y + target.y * 0.35,
+        z: baseCamPos.z - 1.5,
+        duration: 1.3,
+        ease: 'power3.inOut',
+        onComplete() {
+          gsap.to(camera.position, { x: baseCamPos.x, y: baseCamPos.y, z: baseCamPos.z, duration: 1.6, delay: .4,
+            ease: 'power2.inOut' });
+        }
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      cityGroup.rotation.y = t * 0.01;
+      spidermanGroup.position.x = -2.5 + Math.sin(t * 0.3) * 0.5;
+      spidermanGroup.position.y = -1.0 + Math.sin(t * 0.4 + 1) * 0.2;
+      spidermanGroup.rotation.z = Math.sin(t * 0.25) * 0.06;
+      spidermanGroup.rotation.y = Math.sin(t * 0.15) * 0.1;
+      if (armL) armL.rotation.x = -0.3 + Math.sin(t * 1.2) * 0.4;
+      if (armR) armR.rotation.x = 0.3 + Math.sin(t * 1.2 + 0.5) * 0.4;
+
+      floaters.forEach(f => {
+        f.mesh.rotation.y = t * 0.4 * f.speed;
+        f.mesh.rotation.x = Math.sin(t * 0.3 * f.speed) * 0.2;
+        f.mesh.position.y = f.baseY + Math.sin(t * f.speed + f.offset) * 0.6;
+      });
+
+      const posAttr = particlesGeo.attributes.position;
+      for (let i = 0; i < particleCount; i++) {
+        const bx = basePositions[i * 3],
+          by = basePositions[i * 3 + 1],
+          bz = basePositions[i * 3 + 2];
+        posAttr.array[i * 3] = bx + mouse.x * 1.2;
+        posAttr.array[i * 3 + 1] = by + mouse.y * 1.2;
+        posAttr.array[i * 3 + 2] = bz + Math.sin(t * 0.2 + i) * 0.15;
+      }
+      posAttr.needsUpdate = true;
+
+      camera.position.x += (baseCamPos.x + mouse.x * 0.8 - camera.position.x) * 0.02;
+      camera.position.y += (baseCamPos.y + mouse.y * 0.5 - camera.position.y) * 0.02;
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    function initAfterIntro() {
+      initScrollReveals();
+      initTechStack();
+    }
+
+    setTimeout(() => {
+      if (!introComplete) return;
+      initAfterIntro();
+    }, 500);
+
+    enterBtn.addEventListener('click', () => { setTimeout(initAfterIntro, 400); });
+    skipBtn.addEventListener('click', () => { setTimeout(initAfterIntro, 400); });
+  </script>
+</body>
+</html>
